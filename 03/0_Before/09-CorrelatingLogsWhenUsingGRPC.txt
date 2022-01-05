@@ -1,0 +1,23 @@
+
+
+1. On GloboTicket.Services.Discount project,
+   - Add project reference to GloboTicket.Common
+   - Open appsettings.json file and modify/replace the Logging settings with
+     the following config:
+
+          "Logging": {
+            "ElasticUrl": "http://localhost:9200"
+          },
+   
+   - Open Program.cs file and add the following code at the end of the CreateHostBuilder() method:
+
+        .UseSerilog(Logging.ConfigureLogger);
+
+2. Repeat the above steps for the GloboTicket.Services.ShoppingBasket project
+3. Debug the app and add a ticket into basket
+4. Input "Awesome" as discount code and do checkout
+5. Open Kibana and refresh the result
+6. Check the field.ApplicationName
+7. Filter using TraceId, even though the communication between 
+   the shopping basket and the discount services was via gRPC, 
+   logs are included from both these services, they have the same trace id

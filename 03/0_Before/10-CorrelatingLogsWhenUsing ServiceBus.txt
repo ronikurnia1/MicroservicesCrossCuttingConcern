@@ -1,0 +1,152 @@
+
+
+
+1. On GloboTicket.Integration.MessagingBus project,
+   - Open IMessageBus.cs file and replace the PublishMessage function with the following code:
+   
+        Task PublishMessage (IntegrationBaseMessage message, string topicName, string correlationId = null);
+
+   - Open AzServiceBusMessageBus.cs file and replace the PublishMessage() function with the following code:
+
+        public async Task PublishMessage(IntegrationBaseMessage message, string topicName, string correlationId = null)
+        {
+            ISenderClient topicClient = new TopicClient(connectionString, topicName);
+
+            var jsonMessage = JsonConvert.SerializeObject(message);
+            var serviceBusMessage = new Message(Encoding.UTF8.GetBytes(jsonMessage))
+            {
+                CorrelationId = !string.IsNullOrEmpty(correlationId) ? correlationId : Guid.NewGuid().ToString()
+            };
+
+            await topicClient.SendAsync(serviceBusMessage);
+            Console.WriteLine($"Sent message to {topicClient.Path}");
+            await topicClient.CloseAsync();
+        }
+
+2. On GloboTicket.Services.ShoppingBasket project,
+   - Open BasketsController.cs file modify the following code inside CheckoutBasketAsync() method:
+
+                    await messageBus.PublishMessage(basketCheckoutMessage, "checkoutmessage");
+
+     with the following one:
+
+                    await messageBus.PublishMessage(basketCheckoutMessage, "checkoutmessage",
+                        Activity.Current.TraceId.ToString());
+
+
+3. On GloboTicket.Services.Payment project,
+   - Add project reference to GloboTicket.Common project
+   - Open appsettings.json file and replace the Logging setting with the following config:
+
+          "Logging": {
+            "ElasticUrl": "http://localhost:9200"
+          },
+
+   - Open Program.cs file and add the following code at the end of the CreateHostBuilder() method:
+
+        .UseSerilog(Logging.ConfigureLogger);
+
+   - Open ServiceBusListener.cs file under Worker folder, add the following code at the begining 
+     inside ProcessMessageAsync() function:
+
+            using var scope = logger.BeginScope("Processing message for trace {TraceId}", message.CorrelationId);
+
+   - Open ExternalGatewayPaymentService.cs file under Services folder, 
+     replace the whole code with the following one:
+     
+        using GloboTicket.Services.Payment.Model;
+        using Microsoft.Extensions.Configuration;
+        using Microsoft.Extensions.Logging;
+        using System;
+        using System.Net.Http;
+        using System.Net.Http.Headers;
+        using System.Text.Json;
+        using System.Threading.Tasks;
+
+        namespace GloboTicket.Services.Payment.Services
+        {
+            public class ExternalGatewayPaymentService: IExternalGatewayPaymentService
+            {
+                private readonly HttpClient client;
+                private readonly IConfiguration configuration;
+                private readonly ILogger<ExternalGatewayPaymentService> logger;
+
+                public ExternalGatewayPaymentService(HttpClient client, IConfiguration configuration, ILogger<ExternalGatewayPaymentService> logger)
+                {
+                    this.client = client;
+                    this.configuration = configuration;
+                    this.logger = logger;
+                }
+       
+                public async Task<bool> PerformPayment(PaymentInfo paymentInfo)
+                {
+                    var dataAsString = JsonSerializer.Serialize(paymentInfo);
+                    var content = new StringContent(dataAsString);
+                    content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+                    var response = await  client.PostAsync(configuration.GetValue<string>("ApiConfigs:ExternalPaymentGateway:Uri") + "/api/paymentapprover", content);
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        logger.LogError("Unable to make payment for {CardNumber}", HideCardNumber(paymentInfo.CardNumber));
+                        throw new ApplicationException($"Something went wrong calling the API: {response.ReasonPhrase}");
+                    }
+
+                    logger.LogDebug("Successfully made payment for {CardNumber}", HideCardNumber(paymentInfo.CardNumber));
+
+                    var responseString = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                    return JsonSerializer.Deserialize<bool>(responseString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                }
+
+                private static string HideCardNumber(string cardNumber)
+                {
+                    var cardNumberWithoutSpaces = cardNumber.Trim();
+                    var lastDigits = cardNumberWithoutSpaces.Substring(cardNumberWithoutSpaces.Length - 4, 4);
+                    var prefix = new string('*', cardNumberWithoutSpaces.Length - 4);
+                    return prefix + lastDigits;
+                }
+            }
+        }
+
+   - Open ServiceBusListener.cs file under Worker folder, inside ProcessMessageAsync() function replace the following code: 
+
+                await messageBus.PublishMessage(orderPaymentUpdateMessage, orderPaymentUpdatedMessageTopic);
+     
+     with this one:
+
+                await messageBus.PublishMessage(orderPaymentUpdateMessage, orderPaymentUpdatedMessageTopic, message.CorrelationId);
+
+
+
+4. On GloboTicket.Services.Ordering project,
+   - Add project reference to GloboTicket.Common project
+   - Open appsettings.json file and replace the Logging setting with the following config:
+
+          "Logging": {
+            "ElasticUrl": "http://localhost:9200"
+          },
+
+   - Open Program.cs file and add the following code at the end of the CreateHostBuilder() method:
+
+        .UseSerilog(Logging.ConfigureLogger);
+
+
+   - Open AzServiceBusConsumer.cs file under Messaging folder, inside OnCheckoutMessageReceived() function 
+     add the following code at begining:
+
+            using var scope = logger.BeginScope("Processing message for trace {TraceId}", message.CorrelationId);
+
+     Replace the following code:
+
+                await _messageBus.PublishMessage(orderPaymentRequestMessage, orderPaymentRequestMessageTopic);
+
+     with this one:
+
+                await _messageBus.PublishMessage(orderPaymentRequestMessage, orderPaymentRequestMessageTopic, message.CorrelationId);
+
+
+5. Debug the app and perform the checkout process
+6. Open Kibana and refresh the result
+7. See if you can find the "Successfully made payment...."
+8. Filter by TraceID and see all the logs for one complete transaction

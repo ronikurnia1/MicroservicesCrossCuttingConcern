@@ -1,0 +1,33 @@
+
+
+
+1. On GloboTicket.Common project,
+   - Open csproj project file, add the following package reference: 
+
+        <PackageReference Include="Serilog.Sinks.Elasticsearch" Version="8.2.0" />
+
+
+   - Open Logging.cs file, and add the following code into ConfigureLogger action method:
+
+               var elasticUrl = hostingContext.Configuration.GetValue<string>("Logging:ElasticUrl");
+
+               if (!string.IsNullOrEmpty(elasticUrl))
+               {
+                   loggerConfiguration.WriteTo.Elasticsearch(
+                       new ElasticsearchSinkOptions(new Uri(elasticUrl))
+                       {
+                           AutoRegisterTemplate = true,
+                           AutoRegisterTemplateVersion = AutoRegisterTemplateVersion.ESv7,
+                           IndexFormat = "globoticket-logs-{0:yyyy.MM.dd}",
+                           MinimumLogEventLevel = LogEventLevel.Debug
+                       });
+               }
+
+2. On GloboTicket.Web project,
+   - Open appsettings.json file, comment out the existing Logging config and add the following config:
+
+          "Logging": {
+            "ElasticUrl": "http://localhost:9200"
+          },
+
+

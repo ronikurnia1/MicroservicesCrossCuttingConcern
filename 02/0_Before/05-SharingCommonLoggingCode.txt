@@ -1,0 +1,161 @@
+﻿
+
+1. Add new folder called: Common
+2. Inside the folde add new .NET Core library project with the name
+   GloboTicket.Common
+
+3. Open the project file, and add the following code:
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+4. On GloboTicket.Common project,
+   - Rename the Class1.cs file to LoggerExtentions.cs
+   - Copy/Paste the following code into LoggerExtensions.cs file:
+
+        using Microsoft.Extensions.Logging;
+        using System.Net.Http;
+
+        namespace GloboTicket.Common
+        {
+            public static class LoggerExtensions
+            {
+                public static void LogHttpResponse(this ILogger logger, HttpResponseMessage response)
+                {
+                    if (response.IsSuccessStatusCode)
+                    {
+                        logger.LogDebug("Received a success response from {Url}", response.RequestMessage.RequestUri);
+                    }
+                    else
+                    {
+                        logger.LogWarning("Received a non-success status code {StatusCode} from {Url}",
+                            (int)response.StatusCode, response.RequestMessage.RequestUri);
+                    }
+                }
+            }
+        }
+
+    
+5. On GloboTicket.Web project,
+   - Add project reference to GloboTicket.Common project
+   - Open EventCatalogService.cs file, Inside the GetAll() method, modify it using the following code:
+
+            try
+            {
+                var response = await client.GetAsync("/api/events");
+
+                logger.LogHttpResponse(response);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.ReadContentAs<List<Event>>();
+                }
+            }
+            catch (HttpRequestException e) when (e.InnerException is SocketException se &&
+            se.SocketErrorCode == SocketError.ConnectionRefused)
+            {
+                var hostWithPort = client.BaseAddress.IsDefaultPort
+                    ? client.BaseAddress.DnsSafeHost
+                    : $"{client.BaseAddress.DnsSafeHost}:{client.BaseAddress.Port}";
+
+                logger.LogCritical(e, "Unable to connect to {Host}. Please check the " +
+                    "configuration to ensure the correct URL for the service " +
+                    "has been configured.", hostWithPort);
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, "An unexpected exception occurred when loading event data");
+            }
+
+            return Array.Empty<Event>();
+
+
+
+   - Before run the app, there is an alternative way that we can approach for this cross‑cutting concern of HTTP logging
+
+6. On GloboTicket.Common project,
+   - Add new class called LoggingDelegatingHandler and copy/paste the following code:
+
+        using Microsoft.Extensions.Logging;
+        using System.Net;
+        using System.Net.Http;
+        using System.Net.Sockets;
+        using System.Threading;
+        using System.Threading.Tasks;
+
+        namespace GloboTicket.Common
+        {
+            public class LoggingDelegatingHandler : DelegatingHandler
+            {
+                private readonly ILogger<LoggingDelegatingHandler> logger;
+
+                public LoggingDelegatingHandler(ILogger<LoggingDelegatingHandler> logger)
+                {
+                    this.logger = logger;
+                }
+
+                protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+                {
+                    try
+                    {
+                        var response = await base.SendAsync(request, cancellationToken);
+
+                        logger.LogHttpResponse(response);
+
+                        return response;
+                    }
+                    catch (HttpRequestException ex) when (ex.InnerException is SocketException se && se.SocketErrorCode == SocketError.ConnectionRefused)
+                    {
+                        var hostWithPort = request.RequestUri.IsDefaultPort
+                            ? request.RequestUri.DnsSafeHost
+                            : $"{request.RequestUri.DnsSafeHost}:{request.RequestUri.Port}";
+
+                        logger.LogCritical(ex, "Unable to connect to {Host}. Please check the " +
+                                                "configuration to ensure the correct URL for the service " +
+                                                "has been configured.", hostWithPort);
+                    }
+
+                    return new HttpResponseMessage(HttpStatusCode.BadGateway)
+                    {
+                        RequestMessage = request
+                    };
+                }
+            }
+        }
+
+
+7. On GloboTicket.Web project,
+   - Open Startup.cs file, and add the following code inside ConfigureServices() method
+     before services.AddHttpClient() lines:
+
+            services.AddTransient<LoggingDelegatingHandler>();
+
+   - Open Startup.cs file, inside ConfigureServices() method     
+     modify all the services.AddHttpClient() lines by adding 
+     the following code at the end of the line:
+
+            .AddHttpMessageHandler<LoggingDelegatingHandler>();
+
+
+   - Open EventCatalogService.cs file, and remove the following exception handling:
+   
+            catch (HttpRequestException e) when (e.InnerException is SocketException se &&
+            se.SocketErrorCode == SocketError.ConnectionRefused)
+            {
+                var hostWithPort = client.BaseAddress.IsDefaultPort
+                    ? client.BaseAddress.DnsSafeHost
+                    : $"{client.BaseAddress.DnsSafeHost}:{client.BaseAddress.Port}";
+
+                logger.LogCritical(e, "Unable to connect to {Host}. Please check the " +
+                    "configuration to ensure the correct URL for the service " +
+                    "has been configured.", hostWithPort);
+            }
+
+8. Debug the app, and check the console output
+
+9. On GloboTicket.Web project,
+   - Open EventCatalogService.cs file, and remove the following duplicate log message:
+
+            logger.LogHttpResponse(response);
+

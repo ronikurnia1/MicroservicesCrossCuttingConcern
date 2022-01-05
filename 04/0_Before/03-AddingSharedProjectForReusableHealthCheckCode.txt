@@ -1,0 +1,46 @@
+
+
+1. On Common folder, right-click and add new project
+2. Search for shared project and select shared project C# template
+3. Give it name GloboTicket.Shared
+4. On GloboTicket.Services.EventCatalog project, add shared project reference
+   by right-clicking on it -> Add -> Shared Project Reference..
+   and select GloboTicket.Shared
+
+5. On GloboTicket.Shared project,
+   - Add new class called HealthCheckRouteBuilderExtensions, and copy/paste the following code:
+
+        using Microsoft.AspNetCore.Builder;
+        using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+        using Microsoft.AspNetCore.Routing;
+        using System;
+        using System.Collections.Generic;
+        using System.Text;
+
+        namespace GloboTicket.Shared
+        {
+            public static class HealthCheckRouteBuilderExtensions
+            {
+                public static IEndpointRouteBuilder MapDefaultHealthChecks(this IEndpointRouteBuilder endpoints)
+                {
+                    endpoints.MapHealthChecks("/health/live", new HealthCheckOptions
+                    {
+                        Predicate = _ => false
+                    });
+            
+                    endpoints.MapHealthChecks("/health/ready");
+                    
+                    return endpoints;
+                }
+            }
+        }
+
+
+6. On GloboTicket.Services.EventCatalog project,
+   - Open Startup.cs file, update the MapHealthChecks code with this one: 
+   
+                endpoints.MapDefaultHealthChecks();
+
+
+7. Debug the GloboTicket.Services.EventCatalog project
+8. Open your browser and access the following url: https://localhost:5001/health/ready

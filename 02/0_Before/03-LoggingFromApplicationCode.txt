@@ -1,0 +1,45 @@
+
+
+1. On GloboTicket.Web project,
+   - Open EventCatalogService.cs file under Services folder
+   - Add new calss-level private readonly field with the following code:
+
+        private readonly ILogger<EventCatalogService> logger;
+
+   - Modify/replace the class constructor using the following code:
+
+        public EventCatalogService(HttpClient client, ILogger<EventCatalogService> logger)
+        {
+            this.client = client;
+            this.logger = logger;
+        }
+
+   - Inside the GetAll() method, modify it using the following code:
+
+            var response = await client.GetAsync("/api/events");
+
+            if (response.IsSuccessStatusCode)
+            {
+                logger.LogDebug("Received a success response from {Url}", response.RequestMessage.RequestUri);
+                return await response.ReadContentAs<List<Event>>();
+            }
+            else
+            {
+                logger.LogWarning("Received a non-success status code {StatusCode} from {Url}",
+                    (int)response.StatusCode, response.RequestMessage.RequestUri);
+            }
+
+            return Array.Empty<Event>();
+
+2. Debug the app and see the effect in our logging code (it wont show any different)
+3. Modify the LogLevel configuration inside appsettings.Development.json file
+   by adding the following config:
+
+        "GloboTicket": "Debug"
+
+4. Re-Debug the app and see the debug message appear on console output
+
+
+
+
+

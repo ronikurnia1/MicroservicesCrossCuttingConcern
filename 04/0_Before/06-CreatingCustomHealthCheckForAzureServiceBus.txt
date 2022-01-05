@@ -1,0 +1,103 @@
+
+
+1. On GloboTicket.Common project,
+   - Open csproj file and add the following NuGet package:
+
+            <PackageReference Include="Microsoft.Azure.ServiceBus" Version="4.1.4" />
+
+
+2. On GloboTicket.Shared project,
+   - Add new class called AzureServiceBusHealthCheck and copy/paste 
+     the following code:
+
+            using Microsoft.Azure.ServiceBus.Management;
+            using Microsoft.Extensions.Diagnostics.HealthChecks;
+            using System;
+            using System.Collections.Generic;
+            using System.Text;
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            namespace GloboTicket.Shared
+            {
+                public class AzureServiceBusHealthCheck : IHealthCheck
+                {
+                    private readonly ManagementClient _managementClient;
+                    private readonly string _topicName;
+
+                    public AzureServiceBusHealthCheck(string connectionString, string topicName)
+                    {
+                        _managementClient = new ManagementClient(connectionString);
+                        _topicName = topicName;
+                    }
+
+                    public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
+                    {
+                        try
+                        {
+                            _ = await _managementClient.GetTopicRuntimeInfoAsync(_topicName, cancellationToken);
+
+                            return HealthCheckResult.Healthy();
+                        }
+                        catch (Exception e)
+                        {
+                            return new HealthCheckResult(context.Registration.FailureStatus, exception: e);
+                        }
+                    }
+                }
+            }
+
+
+   - Add new class called HealthCheckExtensions and copy/paste the following code:
+
+            using Microsoft.Extensions.DependencyInjection;
+            using Microsoft.Extensions.Diagnostics.HealthChecks;
+            using System;
+            using System.Collections.Generic;
+            using System.Text;
+
+            namespace GloboTicket.Shared
+            {
+                public static class HealthCheckExtensions
+                {
+                    public static IHealthChecksBuilder AddAzureServiceBusTopicHealthCheck(this IHealthChecksBuilder builder,
+                        string connectionString,
+                        string topicName,
+                        string name = default,
+                        HealthStatus failureStatus = HealthStatus.Degraded,
+                        IEnumerable<string> tags = default,
+                        TimeSpan? timeout = default)
+                    {
+                        return builder.AddCheck(name ?? $"Azure Service Bus: {topicName}",
+                            new AzureServiceBusHealthCheck(connectionString, topicName), failureStatus, tags, timeout);
+                    }
+                }
+            }
+
+
+3. On GloboTicket.Services.Ordering project,
+   - Add shared project reference by right-clicking on it -> Add -> Shared Project Reference..
+     and select GloboTicket.Shared
+
+   - Open Startup.cs file, inside of ConfigureServices() method add the followig code at the end of the line:
+
+            services.AddHealthChecks()
+                .AddAzureServiceBusTopicHealthCheck(Configuration["ServiceBusConnectionString"],
+                    Configuration["OrderPaymentRequestMessageTopic"], "Order Payment Request Topic", HealthStatus.Unhealthy)
+                .AddAzureServiceBusTopicHealthCheck(Configuration["ServiceBusConnectionString"],
+                    Configuration["OrderPaymentUpdatedMessageTopic"], "Order Payment Updated Topic", HealthStatus.Unhealthy);
+
+   - Add endpoint configuration by adding the following code inside Configure() method:
+
+                endpoints.MapDefaultHealthChecks();
+
+
+4. Debug the GloboTicket.Services.Ordering project
+5. Use your browser and navigate to https://localhost:5005/health/ready
+
+6. To simulate an issue, edit the appsettings.json file and provide an invalid 
+   topic name for one of these
+
+7. Debug the GloboTicket.Services.Ordering project
+8. Use your browser and navigate to https://localhost:5005/health/ready
+9. Don't forget to fix the topic name before move on

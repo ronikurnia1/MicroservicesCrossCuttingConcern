@@ -1,0 +1,65 @@
+﻿
+
+1. On the GloboTicket.Web project,
+   - Open EventCatalogService.cs file modify/replace the code inside 
+     the GetEvent(Guid id) method using the following one:
+
+            using var scope = logger.BeginScope("Loading event {GloboTicketEventId}", id);
+
+            try
+            {  
+                var response = await client.GetAsync($"/api/events/{id}");
+
+                if (response.IsSuccessStatusCode)
+                {                   
+                    var @event = await response.ReadContentAs<Event>();
+
+                    logger.LogDebug("Successfully loaded event '{GloboTicketEventName}'", @event.Name);
+
+                    return @event;
+                }
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, "An unexpected exception occurred when loading event data");
+            }
+
+            logger.LogWarning("Returning null event");
+            return null;
+
+2. Note that we use logging Scope (explanation on the next slide)
+
+3. Debug the app and select a ticket
+4. Open Kibana and refresh the result
+5. Update the index pattern by refreshing the field list
+6. On GloboTicket.Services.EventCatalog project,
+   - Open EventRespository.cs file and add the following code inside GetEventById(Guid eventId) method:
+
+            if (eventItem is null)
+            {
+                logger.LogInformation("Unable to locate event in the database");
+            }
+
+   - Open EventController.cs file, add new class-level private readonly field using the following code:
+
+            private readonly ILogger<EventController> logger;
+
+     Modify/replace its class constructor with the following code:
+
+            public EventController(IEventRepository eventRepository, IMapper mapper, ILogger<EventController> logger)
+            {
+                this.eventRepository = eventRepository;
+                this.mapper = mapper;
+                this.logger = logger;
+            }
+     
+     Add the following code at the begining line inside GetById(Guid eventId) method:
+
+            using var scope = logger.BeginScope("Handling request for event {GloboTicketEventId}", eventId);
+
+
+7. Debug the app and select an event
+8. Select non‑existent event and it should return 404 error code
+9. Open Kibana and refresh the result
+10. Try to filter using field.GloboTicketEventId
+

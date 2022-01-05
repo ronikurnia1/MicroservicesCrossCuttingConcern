@@ -1,0 +1,12 @@
+
+
+
+1. On GloboTicket.Web project,
+   - Open Program.cs file and add the following code into Main() method:
+
+            Activity.DefaultIdFormat = ActivityIdFormat.W3C;
+
+2. Debug the app, open Kibana and refresh the result
+3. Check the field.TraceId, now it has different format (W3C format)
+
+

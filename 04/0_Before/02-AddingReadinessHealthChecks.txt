@@ -1,0 +1,41 @@
+
+
+
+1. On GloboTicket.Services.EventCatalog project,
+   - Open csproj file, and add the following package recference:
+
+		<PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="3.1.8" />
+
+   - Open Startup.cs file, modify the follwoing code:
+            services.AddHealthChecks();
+
+     with this one:
+            services.AddHealthChecks()
+                .AddDbContextCheck<EventCatalogDbContext>();
+
+
+   - Add new endpoint mapping using the following code:
+
+                endpoints.MapHealthChecks("/health/ready");
+
+2. Debug the GloboTicket.Services.EventCatalog project
+3. Open your browser and access the following url: https://localhost:5001/health/ready
+
+4. Simulate the database issue by breaking the connection string
+5. Debug the GloboTicket.Services.EventCatalog project
+6. Open your browser and access the following url: https://localhost:5001/health/ready
+
+7. Open your browser and access the following url: https://localhost:5001/health/live
+8. Modify/replace the following code:
+        endpoints.MapHealthChecks("/health/live");
+   
+   with this one:
+        endpoints.MapHealthChecks("/health/live", new HealthCheckOptions
+        {
+            Predicate = _ => false
+        });
+
+9. Debug the GloboTicket.Services.EventCatalog project
+10. Open your browser and access the following url: https://localhost:5001/health/live
+
+11. Before moving on, remember to fix the database connection

@@ -1,0 +1,18 @@
+
+
+
+1. On GloboTicket.Services.EventCatalog project,
+   - Open Startup.cs file, add the following code at the end inside of the ConfigureServices() method:
+
+            services.AddHealthChecks();
+
+    Inside Configure() method, modify the app.UseEndpoints() by adding new endpont mapping using the following code:
+
+                endpoints.MapHealthChecks("/health/live");
+
+
+
+2. Debug the GloboTicket.Services.EventCatalog project
+3. Open your browser and access the following url: https://localhost:5001/health/live
+
+

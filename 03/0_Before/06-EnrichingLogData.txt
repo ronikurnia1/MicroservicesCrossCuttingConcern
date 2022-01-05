@@ -1,0 +1,22 @@
+
+
+
+1. On GloboTicket.Common project,
+   - Open Logging.cs file and modify/replace the loggerConfiguration settings with the following code:
+
+               var env = hostingContext.HostingEnvironment;
+
+               loggerConfiguration.MinimumLevel.Information()
+                   .Enrich.FromLogContext()
+                   .Enrich.WithProperty("ApplicationName", env.ApplicationName)
+                   .Enrich.WithProperty("EnvironmentName", env.EnvironmentName)
+                   .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+                   .MinimumLevel.Override("System.Net.Http.HttpClient", LogEventLevel.Warning)
+                   .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
+                   .WriteTo.Console();
+
+
+2. Debug the app then open Kibana and refresh the result
+3. Expand one of the latest log message and see if you get field.ApplicationName and field.EnvironmentName
+4. Update index pattern by opening the existing one and then refresh the field list
+

@@ -1,0 +1,52 @@
+
+
+
+1. On GloboTicket.Web project,
+   - Add shared project reference
+     by right-clicking on it -> Add -> Shared Project Reference..
+     and select GloboTicket.Shared
+
+   - Open Startup.cs file, add the following code at the end 
+     inside ConfigureServices() method:
+
+        services.AddHealthChecks();
+
+     Inside Configure() method, modify the app.UseEndpoints() 
+     by adding new endpoint mapping using the following code:
+
+                endpoints.MapDefaultHealthChecks();
+
+
+   - (Back to slides)
+
+
+   - Assume that we do want to add health checks, which reflect 
+     the status of some downstream API dependencies 
+     (GloboTicket.Web depends on the EventCatalog service)
+
+   - Open csproj file, and add the following NuGet package:
+
+            <PackageReference Include="AspNetCore.HealthChecks.Uris" Version="3.1.2" />
+
+   - Open Startup.cs file, modify the following code:
+            services.AddHealthChecks();
+
+     with this one:
+
+            services.AddHealthChecks()
+                .AddUrlGroup(new Uri($"{config["ApiConfigs:EventCatalog:Uri"]}/health/live"),
+                    "Event Catalog API", HealthStatus.Degraded, timeout: TimeSpan.FromSeconds(1));
+
+2. Debug the app and open the following url on your browser:
+   - https://localhost:5000/health/ready
+
+3. To demonstrate a failure, misconfigure the application to use an invalid
+   port number for the EventCatalog service
+   Open appsettings.Development.json file and change the EventCatalog Uri e.g:
+
+            https://localhost:5051
+
+4. Debug the app and open the following url on your browser:
+   - https://localhost:5000/health/ready
+
+5. Don't forget to fix the EventCatalog Uri before move on

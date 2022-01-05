@@ -1,0 +1,47 @@
+
+
+
+1. On GloboTicket.Web project,
+   - Open EventCatalogService.cs file under Services folder
+   - Inside the GetAll() method, modify it using the following code:
+
+            try
+            {
+                var response = await client.GetAsync("/api/events");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    logger.LogDebug("Received a success response from {Url}", response.RequestMessage.RequestUri);
+                    return await response.ReadContentAs<List<Event>>();
+                }
+                else
+                {
+                    logger.LogWarning("Received a non-success status code {StatusCode} from {Url}",
+                        (int)response.StatusCode, response.RequestMessage.RequestUri);
+                }
+            }
+            catch (HttpRequestException e) when (e.InnerException is SocketException se &&
+            se.SocketErrorCode == SocketError.ConnectionRefused)
+            {
+                var hostWithPort = client.BaseAddress.IsDefaultPort
+                    ? client.BaseAddress.DnsSafeHost
+                    : $"{client.BaseAddress.DnsSafeHost}:{client.BaseAddress.Port}";
+
+                logger.LogCritical(e, "Unable to connect to {Host}. Please check the " +
+                    "configuration to ensure the correct URL for the service " +
+                    "has been configured.", hostWithPort);
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, "An unexpected exception occurred when loading event data");
+            }
+
+            return Array.Empty<Event>();
+
+   - Open appsettings.Development.json file, and change the EventCatalog Uri with the following value
+     to simulate error:
+       
+        "Uri": "https://localhost:1111"
+
+2. Debug the app and see the console log
+3. Before moving on, don't forget to correct the port number for the event catalog service.

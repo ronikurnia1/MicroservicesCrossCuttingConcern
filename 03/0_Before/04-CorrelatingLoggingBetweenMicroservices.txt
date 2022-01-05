@@ -1,0 +1,73 @@
+
+
+1. On GloboTicket.Services.EventCatalog project,
+   - Add project refrerence to GloboTicket.Common project
+   - Open Program.cs file, add the following code at the end of CreateHostBuilder() static method:
+
+            .UseSerilog(Logging.ConfigureLogger);
+   
+   - Open appsettings.json file, and replace the "Logging" config with the following one:
+
+          "Logging": {
+            "ElasticUrl": "http://localhost:9200"
+          },
+
+   - Open EventRepository.cs file, add the following calss-level private readonly field:
+
+           private readonly ILogger<EventRepository> logger;
+
+     Modify/replace the constructor using the following code:
+
+            public EventRepository(EventCatalogDbContext eventCatalogDbContext, ILogger<EventRepository> logger)
+            {
+                _eventCatalogDbContext = eventCatalogDbContext;
+                this.logger = logger;
+            }
+
+     Modify/replace the code inside the GetEvents() method using the following code:
+
+            try
+            {
+                var events = await _eventCatalogDbContext.Events
+                    .Include(x => x.Category)
+                    .Where(x => (x.CategoryId == categoryId || categoryId == Guid.Empty)).ToListAsync();
+
+                logger.LogDebug("Found {EventCount} events in the database", events.Count);
+
+                return events;
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, "An exception occurred while loading an event");
+                throw;
+            }
+
+
+
+     Modify/replace the code inside the GetEventById() method using the following code:
+
+            var eventItem = await _eventCatalogDbContext.Events.Include(x => x.Category).Where(x => x.EventId == eventId).FirstOrDefaultAsync();
+
+            if (eventItem is null)
+            {
+                logger.LogInformation("Unable to locate event in the database");
+            }
+
+            return eventItem;
+
+2. Debug the app and check the console output of GloboTicket.Services.EventCatalog,
+   see it shows new Serilog log message format
+
+3. Jump back to Kibana (http://localhost:5601) and refresh the result to see updated logs
+4. Verify that you get log message from GloboTicket.Services.EventCatalog
+5. Expand the log message of "Found 6 events in the database"
+6. Verify that the log field.SourceContext originated from: 
+   GloboTicket.Services.EventCatalog.Repositories.EventRepository
+7. Now, we have started to aggregate log from 2 microservices into a central repository 
+   where we can query them in a single place
+8. Simulate an intentionally error by misconfiguring the database connection string 
+   for the EventCatalog service so that our service will fail
+
+9. Debug the app and jump back to Kibana and refresh the results
+10. Filter by using TraceId (to focus only one single request)
+11. Verify the error message due to the database access issue
