@@ -1,7 +1,5 @@
-using GloboTicket.Common;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
-using Serilog;
 using System.Diagnostics;
 
 namespace GloboTicket.Web
