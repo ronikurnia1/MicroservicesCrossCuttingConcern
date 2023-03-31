@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
@@ -9,8 +11,8 @@ namespace GloboTicket.Common
 {
     public static class Logging
     {
-        public static Action<HostBuilderContext, LoggerConfiguration> ConfigureLogger =>
-           (hostingContext, loggerConfiguration) =>
+        public static Action<HostBuilderContext, IServiceProvider, LoggerConfiguration> ConfigureLogger =>
+           (hostingContext, provider, loggerConfiguration) =>
            {
                loggerConfiguration.MinimumLevel.Information()
                    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
@@ -35,6 +37,14 @@ namespace GloboTicket.Common
                            IndexFormat = "globoticket-logs-{0:yyyy.MM.dd}",
                            MinimumLogEventLevel = LogEventLevel.Debug
                        });
+               }
+
+               var appInsightsConnectionString = hostingContext.Configuration.GetValue<string>("AppInsightsConnectionString");
+
+               if (!string.IsNullOrEmpty(appInsightsConnectionString))
+               {
+                   loggerConfiguration.WriteTo.ApplicationInsights(provider.GetRequiredService<TelemetryConfiguration>(), 
+                       TelemetryConverter.Traces).CreateLogger();
                }
            };
     }
