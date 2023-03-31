@@ -1,17 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net7.0</TargetFramework>
+		<UserSecretsId>c17f3041-199f-4b4f-ba0c-6e263f600fa2</UserSecretsId>
+	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Azure.ServiceBus" Version="4.1.4" />
-		<PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.8" />
+		<PackageReference Include="Azure.Messaging.ServiceBus" Version="7.13.1" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\GloboTicket.Common\GloboTicket.Common.csproj" />
-	  <ProjectReference Include="..\GloboTicket.Integration.MessagingBus\GloboTicket.Integration.MessagingBus.csproj" />
+		<ProjectReference Include="..\GloboTicket.Integration.MessagingBus\GloboTicket.Integration.MessagingBus.csproj" />
 	</ItemGroup>
 
 

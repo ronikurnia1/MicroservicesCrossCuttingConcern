@@ -55,27 +55,21 @@ namespace GloboTicket.Web.Services
 
         public async Task<Event> GetEvent(Guid id)
         {
-            using var scope = logger.BeginScope("Loading event {GloboTicketEventId}", id);
-
             try
-            {  
+            {
                 var response = await client.GetAsync($"/api/events/{id}");
 
                 if (response.IsSuccessStatusCode)
-                {                   
-                    var @event = await response.ReadContentAs<Event>();
+                {
 
-                    logger.LogDebug("Successfully loaded event '{GloboTicketEventName}'", @event.Name);
-
-                    return @event;
+                    return await response.ReadContentAs<Event>();
                 }
             }
             catch (Exception e)
             {
-                logger.LogError(e, "An unexpected exception occurred when loading event data");
+                // todo
             }
 
-            logger.LogWarning("Returning null event");
             return null;
         }
 

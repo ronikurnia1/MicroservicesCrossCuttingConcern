@@ -4,7 +4,7 @@
 1. On GloboTicket.Common project,
    - Open csproj project file, add the following package reference: 
 
-        <PackageReference Include="Serilog.Sinks.Elasticsearch" Version="8.2.0" />
+		<PackageReference Include="Serilog.Sinks.Elasticsearch" Version="9.0.0" />
 
 
    - Open Logging.cs file, and add the following code into ConfigureLogger action method:

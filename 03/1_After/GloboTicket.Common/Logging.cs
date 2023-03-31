@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
-using Serilog.Exceptions;
 using Serilog.Sinks.Elasticsearch;
 using System;
 
@@ -13,13 +12,7 @@ namespace GloboTicket.Common
         public static Action<HostBuilderContext, LoggerConfiguration> ConfigureLogger =>
            (hostingContext, loggerConfiguration) =>
            {
-               var env = hostingContext.HostingEnvironment;
-
                loggerConfiguration.MinimumLevel.Information()
-                   .Enrich.FromLogContext()
-                   .Enrich.WithProperty("ApplicationName", env.ApplicationName)
-                   .Enrich.WithProperty("EnvironmentName", env.EnvironmentName)
-                   .Enrich.WithExceptionDetails()
                    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
                    .MinimumLevel.Override("System.Net.Http.HttpClient", LogEventLevel.Warning)
                    .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)

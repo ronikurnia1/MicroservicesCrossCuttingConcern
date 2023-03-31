@@ -1,7 +1,5 @@
-using GloboTicket.Common;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
-using Serilog;
 
 namespace GloboTicket.Services.EventCatalog
 {
@@ -17,6 +15,6 @@ namespace GloboTicket.Services.EventCatalog
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
-                }).UseSerilog(Logging.ConfigureLogger);
+                });
     }
 }
