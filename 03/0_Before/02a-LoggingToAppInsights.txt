@@ -1,0 +1,31 @@
+
+
+
+1. On GloboTicket.Common project,
+   - Open csproj project file, add the following package reference: 
+
+		<PackageReference Include="Serilog.Sinks.ApplicationInsights" Version="4.0.0" />
+
+
+   - Open Logging.cs file, and add the following code into ConfigureLogger action method:
+
+               var appInsightsConnectionString = hostingContext.Configuration.GetValue<string>("AppInsightsConnectionString");
+
+               if (!string.IsNullOrEmpty(appInsightsConnectionString))
+               {
+                   loggerConfiguration.WriteTo.ApplicationInsights(provider.GetRequiredService<TelemetryConfiguration>(), 
+                       TelemetryConverter.Traces).CreateLogger();
+               }
+
+
+2. On GloboTicket.Web project,
+   - Open secret.json file, add the following config:
+
+    "ApplicationInsights": {
+        "ConnectionString": "Copy connection string from Application Insights Resource Overview"
+      }
+
+   - Open Startup.cs file, add the following code into ConfigureServices method:    
+     
+     services.AddApplicationInsightsTelemetry();
+

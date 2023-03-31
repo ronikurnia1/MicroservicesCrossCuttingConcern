@@ -39,6 +39,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Instructions", "Instruction
 	ProjectSection(SolutionItems) = preProject
 		01-AddingSupportForSerilog.txt = 01-AddingSupportForSerilog.txt
 		02-LoggingToElasticsearchUsingSerilog.txt = 02-LoggingToElasticsearchUsingSerilog.txt
+		02a-LoggingToAppInsights.txt = 02a-LoggingToAppInsights.txt
 		03-QueryingLogsWithKibana.txt = 03-QueryingLogsWithKibana.txt
 		04-CorrelatingLoggingBetweenMicroservices.txt = 04-CorrelatingLoggingBetweenMicroservices.txt
 		05-TraceIdFormat.txt = 05-TraceIdFormat.txt
