@@ -17,6 +17,6 @@ namespace GloboTicket.Services.Ordering
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
-                }).UseSerilog(Logging.ConfigureLogger);
+                });
     }
 }

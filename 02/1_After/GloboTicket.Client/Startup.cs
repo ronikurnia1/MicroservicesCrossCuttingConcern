@@ -33,12 +33,15 @@ namespace GloboTicket.Web
             services.AddHttpClient<IEventCatalogService, EventCatalogService>(c =>
                 c.BaseAddress = new Uri(config["ApiConfigs:EventCatalog:Uri"]))
                 .AddHttpMessageHandler<LoggingDelegatingHandler>();
+
             services.AddHttpClient<IShoppingBasketService, ShoppingBasketService>(c =>
                 c.BaseAddress = new Uri(config["ApiConfigs:ShoppingBasket:Uri"]))
                 .AddHttpMessageHandler<LoggingDelegatingHandler>();
+
             services.AddHttpClient<IOrderService, OrderService>(c =>
                 c.BaseAddress = new Uri(config["ApiConfigs:Order:Uri"]))
                 .AddHttpMessageHandler<LoggingDelegatingHandler>();
+
             services.AddHttpClient<IDiscountService, DiscountService>(c =>
                 c.BaseAddress = new Uri(config["ApiConfigs:Discount:Uri"]))
                 .AddHttpMessageHandler<LoggingDelegatingHandler>();

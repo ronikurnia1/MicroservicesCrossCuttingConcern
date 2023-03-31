@@ -17,6 +17,6 @@ namespace GloboTicket.Services.ShoppingBasket
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
-                }).UseSerilog(Logging.ConfigureLogger);
+                });
     }
 }

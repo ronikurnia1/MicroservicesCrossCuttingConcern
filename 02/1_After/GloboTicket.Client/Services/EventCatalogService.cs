@@ -1,9 +1,11 @@
-﻿using GloboTicket.Web.Extensions;
+﻿using GloboTicket.Common;
+using GloboTicket.Web.Extensions;
 using GloboTicket.Web.Models.Api;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 
 namespace GloboTicket.Web.Services
@@ -24,7 +26,6 @@ namespace GloboTicket.Web.Services
             try
             {
                 var response = await client.GetAsync("/api/events");
-
                 if (response.IsSuccessStatusCode)
                 {
                     return await response.ReadContentAs<List<Event>>();
@@ -33,16 +34,18 @@ namespace GloboTicket.Web.Services
             catch (Exception e)
             {
                 logger.LogError(e, "An unexpected exception occurred when loading event data");
-            }            
+            }
 
             return Array.Empty<Event>();
+
+
         }
 
-        public async Task<IEnumerable<Event>> GetByCategoryId(Guid categoryid)
+        public async Task<IEnumerable<Event>> GetByCategoryId(Guid categoryId)
         {
             try
             {
-                var response = await client.GetAsync($"/api/events/?categoryId={categoryid}");
+                var response = await client.GetAsync($"/api/events/?categoryId={categoryId}");
                 return await response.ReadContentAs<List<Event>>();
             }
             catch (Exception e)
@@ -58,11 +61,11 @@ namespace GloboTicket.Web.Services
             using var scope = logger.BeginScope("Loading event {GloboTicketEventId}", id);
 
             try
-            {  
+            {
                 var response = await client.GetAsync($"/api/events/{id}");
 
                 if (response.IsSuccessStatusCode)
-                {                   
+                {
                     var @event = await response.ReadContentAs<Event>();
 
                     logger.LogDebug("Successfully loaded event '{GloboTicketEventName}'", @event.Name);

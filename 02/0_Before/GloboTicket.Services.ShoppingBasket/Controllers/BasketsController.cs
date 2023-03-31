@@ -1,20 +1,19 @@
 ﻿using AutoMapper;
+using GloboTicket.Grpc;
 using GloboTicket.Integration.MessagingBus;
 using GloboTicket.Services.ShoppingBasket.Messages;
 using GloboTicket.Services.ShoppingBasket.Models;
 using GloboTicket.Services.ShoppingBasket.Repositories;
 using GloboTicket.Services.ShoppingBasket.Services;
+using Grpc.Net.Client;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using GloboTicket.Grpc;
-using Grpc.Net.Client;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using Coupon = GloboTicket.Services.ShoppingBasket.Models.Coupon;
 
 namespace GloboTicket.Services.ShoppingBasket.Controllers
@@ -26,14 +25,14 @@ namespace GloboTicket.Services.ShoppingBasket.Controllers
         private readonly IBasketRepository basketRepository;
         private readonly IMapper mapper;
         private readonly IMessageBus messageBus;
-        //private readonly IDiscountService discountService;
+        private readonly string connectionString;
 
-        public BasketsController(IBasketRepository basketRepository, IMapper mapper, IMessageBus messageBus)//, IDiscountService discountService)
+        public BasketsController(IBasketRepository basketRepository, IMapper mapper, IMessageBus messageBus, IConfiguration configuration)
         {
             this.basketRepository = basketRepository;
             this.mapper = mapper;
             this.messageBus = messageBus;
-            //this.discountService = discountService;
+            connectionString = configuration.GetValue<string>("ServiceBusConnectionString");
         }
 
         [HttpGet("{basketId}", Name = "GetBasket")]
@@ -138,7 +137,7 @@ namespace GloboTicket.Services.ShoppingBasket.Controllers
 
                 try
                 {
-                    await messageBus.PublishMessage(basketCheckoutMessage, "checkoutmessage");
+                    await messageBus.PublishMessage(basketCheckoutMessage, "checkoutmessage", connectionString);
                 }
                 catch (Exception e)
                 {

@@ -71,8 +71,7 @@
             return Array.Empty<Event>();
 
 
-
-   - Before run the app, there is an alternative way that we can approach for this cross‑cutting concern of HTTP logging
+   - Before run the app, there is an alternative way that we can approach for this cross‑cutting concern of HTTP logging:
 
 6. On GloboTicket.Common project,
    - Add new class called LoggingDelegatingHandler and copy/paste the following code:
