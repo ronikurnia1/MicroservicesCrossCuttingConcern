@@ -124,7 +124,7 @@ namespace GloboTicket.Services.ShoppingBasket.Controllers
 
                 DiscountService discountService = new DiscountService(new Discounts.DiscountsClient(channel));
                 if (basket.CouponId.HasValue)
-                    coupon = await discountService.GetCoupon(Guid.NewGuid());
+                    coupon = await discountService.GetCoupon(basket.CouponId.Value);
 
                 if (coupon != null)
                 {

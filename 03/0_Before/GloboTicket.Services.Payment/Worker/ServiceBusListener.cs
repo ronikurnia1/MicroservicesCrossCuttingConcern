@@ -101,7 +101,7 @@ namespace GloboTicket.Services.Payment.Worker
             }
 
             logger.LogDebug($"{orderPaymentRequestMessage.OrderId}: ServiceBusListener received item.");
-            await Task.Delay(20000);
+            await Task.Delay(2000);
             logger.LogDebug($"{orderPaymentRequestMessage.OrderId}:  ServiceBusListener processed item.");
         }
     }
