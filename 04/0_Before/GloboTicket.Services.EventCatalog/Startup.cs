@@ -57,7 +57,7 @@ namespace GloboTicket.Services.EventCatalog
             app.UseRouting();
 
             app.UseAuthorization();
-            
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

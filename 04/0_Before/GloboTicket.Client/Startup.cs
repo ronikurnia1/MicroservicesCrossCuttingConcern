@@ -28,6 +28,8 @@ namespace GloboTicket.Web
             if (environment.IsDevelopment())
                 builder.AddRazorRuntimeCompilation();
 
+            services.AddApplicationInsightsTelemetry();
+
             services.AddTransient<LoggingDelegatingHandler>();
 
             services.AddHttpClient<IEventCatalogService, EventCatalogService>(c =>

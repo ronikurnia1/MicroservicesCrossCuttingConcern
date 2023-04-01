@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace GloboTicket.Services.Payment.Services
 {
-    public class ExternalGatewayPaymentService: IExternalGatewayPaymentService
+    public class ExternalGatewayPaymentService : IExternalGatewayPaymentService
     {
         private readonly HttpClient client;
         private readonly IConfiguration configuration;
@@ -21,14 +21,14 @@ namespace GloboTicket.Services.Payment.Services
             this.configuration = configuration;
             this.logger = logger;
         }
-       
+
         public async Task<bool> PerformPayment(PaymentInfo paymentInfo)
         {
             var dataAsString = JsonSerializer.Serialize(paymentInfo);
             var content = new StringContent(dataAsString);
             content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
 
-            var response = await  client.PostAsync(configuration.GetValue<string>("ApiConfigs:ExternalPaymentGateway:Uri") + "/api/paymentapprover", content);
+            var response = await client.PostAsync(configuration.GetValue<string>("ApiConfigs:ExternalPaymentGateway:Uri") + "/api/paymentapprover", content);
 
             if (!response.IsSuccessStatusCode)
             {

@@ -58,11 +58,11 @@ namespace GloboTicket.Web.Services
             using var scope = logger.BeginScope("Loading event {GloboTicketEventId}", id);
 
             try
-            {  
+            {
                 var response = await client.GetAsync($"/api/events/{id}");
 
                 if (response.IsSuccessStatusCode)
-                {                   
+                {
                     var @event = await response.ReadContentAs<Event>();
 
                     logger.LogDebug("Successfully loaded event '{GloboTicketEventName}'", @event.Name);
