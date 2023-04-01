@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -124,7 +125,7 @@ namespace GloboTicket.Services.ShoppingBasket.Controllers
 
                 DiscountService discountService = new DiscountService(new Discounts.DiscountsClient(channel));
                 if (basket.CouponId.HasValue)
-                    coupon = await discountService.GetCoupon(Guid.NewGuid());
+                    coupon = await discountService.GetCoupon(basket.CouponId.Value);
 
                 if (coupon != null)
                 {
@@ -137,7 +138,7 @@ namespace GloboTicket.Services.ShoppingBasket.Controllers
 
                 try
                 {
-                    await messageBus.PublishMessage(basketCheckoutMessage, "checkoutmessage", connectionString);
+                    await messageBus.PublishMessage(basketCheckoutMessage, "checkoutmessage", connectionString, Activity.Current.TraceId.ToString());
                 }
                 catch (Exception e)
                 {

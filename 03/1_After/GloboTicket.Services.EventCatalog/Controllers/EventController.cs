@@ -14,11 +14,13 @@ namespace GloboTicket.Services.EventCatalog.Controllers
     {
         private readonly IEventRepository eventRepository;
         private readonly IMapper mapper;
+        private readonly ILogger<EventController> logger;
 
-        public EventController(IEventRepository eventRepository, IMapper mapper)
+        public EventController(IEventRepository eventRepository, IMapper mapper, ILogger<EventController> logger)
         {
             this.eventRepository = eventRepository;
             this.mapper = mapper;
+            this.logger = logger;
         }
 
         [HttpGet]
@@ -31,6 +33,8 @@ namespace GloboTicket.Services.EventCatalog.Controllers
         [HttpGet("{eventId}")]
         public async Task<ActionResult<Models.EventDto>> GetById(Guid eventId)
         {
+            using var scope = logger.BeginScope("Handling request for event {GloboTicketEventId}", eventId);
+
             var result = await eventRepository.GetEventById(eventId);
 
             if (result is null) return NotFound();

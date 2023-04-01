@@ -4,6 +4,7 @@ using GloboTicket.Services.Ordering.Entities;
 using GloboTicket.Services.Ordering.Messages;
 using GloboTicket.Services.Ordering.Repositories;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Text;
@@ -14,6 +15,7 @@ namespace GloboTicket.Services.Ordering.Messaging
     public class AzServiceBusConsumer : IAzServiceBusConsumer
     {
         private readonly string subscriptionName = "globoticketorder";
+        private readonly IMessageBus messageBus;
 
         private readonly IConfiguration _configuration;
 
@@ -21,13 +23,21 @@ namespace GloboTicket.Services.Ordering.Messaging
         private readonly ServiceBusProcessor _serviceBusProcessor;
 
         private readonly string checkoutMessageTopic;
+        private readonly string orderPaymentRequestMessageTopic;
+        private readonly string serviceBusConnectionString;
 
-        public AzServiceBusConsumer(IConfiguration configuration, IMessageBus messageBus, OrderRepository orderRepository)
+        private readonly ILogger<AzServiceBusConsumer> logger;
+
+        public AzServiceBusConsumer(IConfiguration configuration, IMessageBus messageBus, OrderRepository orderRepository, ILogger<AzServiceBusConsumer> logger)
         {
+            this.messageBus = messageBus;
             _configuration = configuration;
             _orderRepository = orderRepository;
+            this.logger = logger;
 
-            var serviceBusConnectionString = _configuration.GetValue<string>("ServiceBusConnectionString");
+            serviceBusConnectionString = _configuration.GetValue<string>("ServiceBusConnectionString");
+            orderPaymentRequestMessageTopic = _configuration.GetValue<string>("OrderPaymentRequestMessageTopic");
+
             var serviceBusClient = new ServiceBusClient(serviceBusConnectionString);
 
             checkoutMessageTopic = _configuration.GetValue<string>("CheckoutMessageTopic");
@@ -45,6 +55,8 @@ namespace GloboTicket.Services.Ordering.Messaging
 
         private async Task MessageHandler(ProcessMessageEventArgs args)
         {
+            using var scope = logger.BeginScope("Processing message for trace {TraceId}", args.Message.CorrelationId);
+
             var body = Encoding.UTF8.GetString(args.Message.Body);//json from service bus
 
             // Save order with status "not paid"
@@ -65,6 +77,18 @@ namespace GloboTicket.Services.Ordering.Messaging
 
             // Trigger payment service by sending a new message.  
             // Functionality not included in demo on purpose.  
+            var orderPaymentRequestMessage = new OrderPaymentRequestMessage
+            {
+                OrderId = orderId,
+                CardExpiration = basketCheckoutMessage.CardExpiration,
+                CardName = basketCheckoutMessage.CardName,
+                CardNumber = basketCheckoutMessage.CardNumber,
+                CreationDateTime = DateTime.Now,
+                Id = Guid.NewGuid(),
+                Total = basketCheckoutMessage.BasketTotal
+            };
+
+            await messageBus.PublishMessage(orderPaymentRequestMessage, orderPaymentRequestMessageTopic, serviceBusConnectionString, args.Message.CorrelationId);
         }
 
         private Task ErrorHandler(ProcessErrorEventArgs args)

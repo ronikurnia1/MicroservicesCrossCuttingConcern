@@ -9,7 +9,7 @@ namespace GloboTicket.Integration.MessagingBus
 {
     public class AzServiceBusMessageBus : IMessageBus
     {
-        public async Task PublishMessage(IntegrationBaseMessage message, string topicName, string connectionString)
+        public async Task PublishMessage(IntegrationBaseMessage message, string topicName, string connectionString, string correlationId = null)
         {
             ServiceBusClient client = new ServiceBusClient(connectionString);
             var sender = client.CreateSender(topicName);
@@ -17,7 +17,7 @@ namespace GloboTicket.Integration.MessagingBus
             var jsonMessage = JsonConvert.SerializeObject(message);
             var serviceBusMessage = new ServiceBusMessage(Encoding.UTF8.GetBytes(jsonMessage))
             {
-                CorrelationId = Guid.NewGuid().ToString()
+                CorrelationId = !string.IsNullOrEmpty(correlationId) ? correlationId : Guid.NewGuid().ToString()
             };
 
             await sender.SendMessageAsync(serviceBusMessage);

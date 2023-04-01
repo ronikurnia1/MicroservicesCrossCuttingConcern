@@ -41,8 +41,6 @@ namespace GloboTicket.Services.ShoppingBasket.Services
 
         public async Task<Coupon> GetCoupon(Guid couponId)
         {
-            var id = Activity.Current.TraceId.ToString();
-
             try
             {
                 GetCouponByIdRequest getCouponByIdRequest = new GetCouponByIdRequest { CouponId = couponId.ToString() };

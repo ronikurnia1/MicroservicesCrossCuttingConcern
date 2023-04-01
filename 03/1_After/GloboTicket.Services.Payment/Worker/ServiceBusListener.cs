@@ -92,7 +92,7 @@ namespace GloboTicket.Services.Payment.Worker
 
             try
             {
-                await messageBus.PublishMessage(orderPaymentUpdateMessage, orderPaymentUpdatedMessageTopic, connectionString);
+                await messageBus.PublishMessage(orderPaymentUpdateMessage, orderPaymentUpdatedMessageTopic, connectionString, args.Message.CorrelationId);
             }
             catch (Exception e)
             {
@@ -101,7 +101,7 @@ namespace GloboTicket.Services.Payment.Worker
             }
 
             logger.LogDebug($"{orderPaymentRequestMessage.OrderId}: ServiceBusListener received item.");
-            await Task.Delay(20000);
+            await Task.Delay(2000);
             logger.LogDebug($"{orderPaymentRequestMessage.OrderId}:  ServiceBusListener processed item.");
         }
     }
