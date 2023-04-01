@@ -1,4 +1,3 @@
-using AutoMapper;
 using GloboTicket.Services.EventCatalog.DbContexts;
 using GloboTicket.Services.EventCatalog.Repositories;
 using GloboTicket.Shared;
@@ -62,11 +61,11 @@ namespace GloboTicket.Services.EventCatalog
             app.UseRouting();
 
             app.UseAuthorization();
-            
+
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapDefaultHealthChecks();
                 endpoints.MapControllers();
+                endpoints.MapDefaultHealthChecks();
             });
         }
     }

@@ -1,20 +1,18 @@
-using AutoMapper;
 using GloboTicket.Integration.MessagingBus;
 using GloboTicket.Services.Ordering.DbContexts;
 using GloboTicket.Services.Ordering.Extensions;
 using GloboTicket.Services.Ordering.Messaging;
 using GloboTicket.Services.Ordering.Repositories;
+using GloboTicket.Shared;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using System;
-using Microsoft.Extensions.Logging;
-using GloboTicket.Shared;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace GloboTicket.Services.Ordering
 {
@@ -61,6 +59,7 @@ namespace GloboTicket.Services.Ordering
                     Configuration["OrderPaymentRequestMessageTopic"], "Order Payment Request Topic", HealthStatus.Unhealthy)
                 .AddAzureServiceBusTopicHealthCheck(Configuration["ServiceBusConnectionString"],
                     Configuration["OrderPaymentUpdatedMessageTopic"], "Order Payment Updated Topic", HealthStatus.Unhealthy);
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -89,8 +88,8 @@ namespace GloboTicket.Services.Ordering
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapDefaultHealthChecks();
                 endpoints.MapControllers();
+                endpoints.MapDefaultHealthChecks();
             });
 
             app.UseAzServiceBusConsumer();

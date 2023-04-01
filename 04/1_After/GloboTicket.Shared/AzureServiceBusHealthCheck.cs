@@ -1,8 +1,6 @@
-﻿using Microsoft.Azure.ServiceBus.Management;
+using Azure.Messaging.ServiceBus.Administration;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -10,21 +8,21 @@ namespace GloboTicket.Shared
 {
     public class AzureServiceBusHealthCheck : IHealthCheck
     {
-        private readonly ManagementClient _managementClient;
-        private readonly string _topicName;
+        private readonly string connectionString;
+        private readonly string topicName;
 
         public AzureServiceBusHealthCheck(string connectionString, string topicName)
         {
-            _managementClient = new ManagementClient(connectionString);
-            _topicName = topicName;
+            this.connectionString = connectionString;
+            this.topicName = topicName;
         }
 
         public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
         {
             try
             {
-                _ = await _managementClient.GetTopicRuntimeInfoAsync(_topicName, cancellationToken);
-
+                var serviceBusAdministrationClient = new ServiceBusAdministrationClient(connectionString);
+                _ = await serviceBusAdministrationClient.GetTopicRuntimePropertiesAsync(topicName, cancellationToken).ConfigureAwait(false);
                 return HealthCheckResult.Healthy();
             }
             catch (Exception e)
@@ -34,3 +32,4 @@ namespace GloboTicket.Shared
         }
     }
 }
+

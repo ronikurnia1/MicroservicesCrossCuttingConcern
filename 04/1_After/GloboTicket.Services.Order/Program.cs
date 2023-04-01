@@ -1,7 +1,7 @@
+using GloboTicket.Common;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using GloboTicket.Common;
 
 namespace GloboTicket.Services.Ordering
 {

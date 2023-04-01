@@ -30,6 +30,8 @@ namespace GloboTicket.Web
             if (environment.IsDevelopment())
                 builder.AddRazorRuntimeCompilation();
 
+            services.AddApplicationInsightsTelemetry();
+
             services.AddTransient<LoggingDelegatingHandler>();
 
             services.AddHttpClient<IEventCatalogService, EventCatalogService>(c =>
@@ -73,10 +75,11 @@ namespace GloboTicket.Web
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapDefaultHealthChecks();
                 endpoints.MapControllerRoute(
                     name: "default",
                     pattern: "{controller=EventCatalog}/{action=Index}/{id?}");
+
+                endpoints.MapDefaultHealthChecks();
             });
         }
     }

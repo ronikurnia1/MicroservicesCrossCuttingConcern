@@ -1,20 +1,20 @@
 ﻿using AutoMapper;
+using GloboTicket.Grpc;
 using GloboTicket.Integration.MessagingBus;
 using GloboTicket.Services.ShoppingBasket.Messages;
 using GloboTicket.Services.ShoppingBasket.Models;
 using GloboTicket.Services.ShoppingBasket.Repositories;
 using GloboTicket.Services.ShoppingBasket.Services;
+using Grpc.Net.Client;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using GloboTicket.Grpc;
-using Grpc.Net.Client;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using Coupon = GloboTicket.Services.ShoppingBasket.Models.Coupon;
 
 namespace GloboTicket.Services.ShoppingBasket.Controllers
@@ -26,18 +26,14 @@ namespace GloboTicket.Services.ShoppingBasket.Controllers
         private readonly IBasketRepository basketRepository;
         private readonly IMapper mapper;
         private readonly IMessageBus messageBus;
-        private readonly ILogger<BasketsController> logger;
+        private readonly string connectionString;
 
-        //private readonly IDiscountService discountService;
-
-        public BasketsController(IBasketRepository basketRepository, IMapper mapper, 
-            IMessageBus messageBus, ILogger<BasketsController> logger)//, IDiscountService discountService)
+        public BasketsController(IBasketRepository basketRepository, IMapper mapper, IMessageBus messageBus, IConfiguration configuration)
         {
             this.basketRepository = basketRepository;
             this.mapper = mapper;
             this.messageBus = messageBus;
-            this.logger = logger;
-            //this.discountService = discountService;
+            connectionString = configuration.GetValue<string>("ServiceBusConnectionString");
         }
 
         [HttpGet("{basketId}", Name = "GetBasket")]
@@ -85,8 +81,6 @@ namespace GloboTicket.Services.ShoppingBasket.Controllers
             basket.CouponId = coupon.CouponId;
             await basketRepository.SaveChanges();
 
-            logger.LogDebug("Applied coupon {CouponId} to basket {BasketId}", coupon.CouponId, basketId);
-
             return Accepted();
         }
 
@@ -96,20 +90,15 @@ namespace GloboTicket.Services.ShoppingBasket.Controllers
         [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public async Task<IActionResult> CheckoutBasketAsync([FromBody] BasketCheckout basketCheckout)
         {
-            using var scope = logger.BeginScope("Checking out basket {BasketId}", basketCheckout.BasketId);
-
             try
             {
                 //based on basket checkout, fetch the basket lines from repo
-                var basket = await basketRepository.GetBasketById(basketCheckout.BasketId);          
+                var basket = await basketRepository.GetBasketById(basketCheckout.BasketId);
 
                 if (basket == null)
                 {
-                    logger.LogWarning("Basket was not found");
                     return BadRequest();
                 }
-
-                logger.LogDebug("Loaded basket");
 
                 BasketCheckoutMessage basketCheckoutMessage = mapper.Map<BasketCheckoutMessage>(basketCheckout);
                 basketCheckoutMessage.BasketLines = new List<BasketLineMessage>();
@@ -140,25 +129,20 @@ namespace GloboTicket.Services.ShoppingBasket.Controllers
 
                 if (coupon != null)
                 {
-                    logger.LogDebug("Applying discount {DiscountAmount} from {CouponId}", coupon.Amount, basket.CouponId.Value);
                     basketCheckoutMessage.BasketTotal = total - coupon.Amount;
                 }
                 else
                 {
-                    logger.LogDebug("No discount to apply");
                     basketCheckoutMessage.BasketTotal = total;
                 }
 
                 try
                 {
-                    await messageBus.PublishMessage(basketCheckoutMessage, "checkoutmessage",
-                        Activity.Current.TraceId.ToString());
-
-                    logger.LogDebug("Published checkout message");
+                    await messageBus.PublishMessage(basketCheckoutMessage, "checkoutmessage", connectionString, Activity.Current.TraceId.ToString());
                 }
                 catch (Exception e)
                 {
-                    logger.LogError(e, "Unable to publish checkout message");
+                    Console.WriteLine(e);
                     throw;
                 }
 
@@ -167,8 +151,6 @@ namespace GloboTicket.Services.ShoppingBasket.Controllers
             }
             catch (Exception e)
             {
-                logger.LogError(e, "An exception occurred when checking out the basket");
-
                 return StatusCode(StatusCodes.Status500InternalServerError, e.StackTrace);
             }
         }

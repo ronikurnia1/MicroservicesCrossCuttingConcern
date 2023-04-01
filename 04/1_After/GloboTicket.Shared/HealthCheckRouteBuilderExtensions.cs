@@ -1,9 +1,6 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Routing;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace GloboTicket.Shared
 {
@@ -16,7 +13,7 @@ namespace GloboTicket.Shared
                 Predicate = _ => false,
                 ResponseWriter = HealthCheckResponses.WriteJsonResponse
             });
-            
+
             endpoints.MapHealthChecks("/health/ready", new HealthCheckOptions
             {
                 ResponseWriter = HealthCheckResponses.WriteJsonResponse
