@@ -14,20 +14,23 @@ namespace GloboTicket.Services.Ordering.Messaging
     public class AzServiceBusConsumer : IAzServiceBusConsumer
     {
         private readonly string subscriptionName = "globoticketorder";
-
+        private readonly IMessageBus messageBus;
         private readonly IConfiguration _configuration;
 
         private readonly OrderRepository _orderRepository;
         private readonly ServiceBusProcessor _serviceBusProcessor;
 
         private readonly string checkoutMessageTopic;
+        private readonly string orderPaymentRequestMessageTopic;
+        private readonly string serviceBusConnectionString;
 
         public AzServiceBusConsumer(IConfiguration configuration, IMessageBus messageBus, OrderRepository orderRepository)
         {
+            this.messageBus = messageBus;
             _configuration = configuration;
             _orderRepository = orderRepository;
 
-            var serviceBusConnectionString = _configuration.GetValue<string>("ServiceBusConnectionString");
+            serviceBusConnectionString = _configuration.GetValue<string>("ServiceBusConnectionString");
             var serviceBusClient = new ServiceBusClient(serviceBusConnectionString);
 
             checkoutMessageTopic = _configuration.GetValue<string>("CheckoutMessageTopic");
@@ -65,6 +68,19 @@ namespace GloboTicket.Services.Ordering.Messaging
 
             // Trigger payment service by sending a new message.  
             // Functionality not included in demo on purpose.  
+            var orderPaymentRequestMessage = new OrderPaymentRequestMessage
+            {
+                OrderId = orderId,
+                CardExpiration = basketCheckoutMessage.CardExpiration,
+                CardName = basketCheckoutMessage.CardName,
+                CardNumber = basketCheckoutMessage.CardNumber,
+                CreationDateTime = DateTime.Now,
+                Id = Guid.NewGuid(),
+                Total = basketCheckoutMessage.BasketTotal
+            };
+
+            await messageBus.PublishMessage(orderPaymentRequestMessage, orderPaymentRequestMessageTopic, serviceBusConnectionString);
+            
         }
 
         private Task ErrorHandler(ProcessErrorEventArgs args)

@@ -4,23 +4,24 @@
 1. On GloboTicket.Integration.MessagingBus project,
    - Open IMessageBus.cs file and replace the PublishMessage function with the following code:
    
-        Task PublishMessage (IntegrationBaseMessage message, string topicName, string correlationId = null);
+        Task PublishMessage (IntegrationBaseMessage message, string topicName, string connectionString, string correlationId = null);
 
    - Open AzServiceBusMessageBus.cs file and replace the PublishMessage() function with the following code:
 
-        public async Task PublishMessage(IntegrationBaseMessage message, string topicName, string correlationId = null)
+        public async Task PublishMessage(IntegrationBaseMessage message, string topicName, string connectionString, string correlationId = null)
         {
-            ISenderClient topicClient = new TopicClient(connectionString, topicName);
+            ServiceBusClient client = new ServiceBusClient(connectionString);
+            var sender = client.CreateSender(topicName);
 
             var jsonMessage = JsonConvert.SerializeObject(message);
-            var serviceBusMessage = new Message(Encoding.UTF8.GetBytes(jsonMessage))
+            var serviceBusMessage = new ServiceBusMessage(Encoding.UTF8.GetBytes(jsonMessage))
             {
                 CorrelationId = !string.IsNullOrEmpty(correlationId) ? correlationId : Guid.NewGuid().ToString()
             };
 
-            await topicClient.SendAsync(serviceBusMessage);
-            Console.WriteLine($"Sent message to {topicClient.Path}");
-            await topicClient.CloseAsync();
+            await sender.SendMessageAsync(serviceBusMessage);
+            Console.WriteLine($"Sent message to {sender.EntityPath}");
+            await sender.CloseAsync();
         }
 
 2. On GloboTicket.Services.ShoppingBasket project,
@@ -111,11 +112,11 @@
 
    - Open ServiceBusListener.cs file under Worker folder, inside ProcessMessageAsync() function replace the following code: 
 
-                await messageBus.PublishMessage(orderPaymentUpdateMessage, orderPaymentUpdatedMessageTopic);
+                await messageBus.PublishMessage(orderPaymentUpdateMessage, orderPaymentUpdatedMessageTopic, connectionString);
      
      with this one:
 
-                await messageBus.PublishMessage(orderPaymentUpdateMessage, orderPaymentUpdatedMessageTopic, message.CorrelationId);
+                await messageBus.PublishMessage(orderPaymentUpdateMessage, orderPaymentUpdatedMessageTopic, connectionString, args.Message.CorrelationId);
 
 
 
@@ -132,18 +133,38 @@
         .UseSerilog(Logging.ConfigureLogger);
 
 
-   - Open AzServiceBusConsumer.cs file under Messaging folder, inside OnCheckoutMessageReceived() function 
+   - Open AzServiceBusConsumer.cs file under Messaging folder, add the following code at the begining of the class:
+
+        private readonly ILogger<AzServiceBusConsumer> logger;
+
+   - Change the constructor to accept ILogger<AzServiceBusConsumer> as parameter and assign it to the logger field:
+    
+        public AzServiceBusConsumer(IConfiguration configuration, OrderRepository orderRepository, ILogger<AzServiceBusConsumer> logger)
+        {
+            _configuration = configuration;
+            _orderRepository = orderRepository;
+            this.logger = logger;
+
+            var serviceBusConnectionString = _configuration.GetValue<string>("ServiceBusConnectionString");
+            var serviceBusClient = new ServiceBusClient(serviceBusConnectionString);
+
+            checkoutMessageTopic = _configuration.GetValue<string>("CheckoutMessageTopic");
+
+            _serviceBusProcessor = serviceBusClient.CreateProcessor(checkoutMessageTopic, subscriptionName);
+        }
+
+   - Open AzServiceBusConsumer.cs file under Messaging folder, inside MessageHandler() method 
      add the following code at begining:
 
-            using var scope = logger.BeginScope("Processing message for trace {TraceId}", message.CorrelationId);
+            using var scope = logger.BeginScope("Processing message for trace {TraceId}", args.Message.CorrelationId);
 
      Replace the following code:
 
-                await _messageBus.PublishMessage(orderPaymentRequestMessage, orderPaymentRequestMessageTopic);
+            await messageBus.PublishMessage(orderPaymentRequestMessage, orderPaymentRequestMessageTopic, serviceBusConnectionString);
 
      with this one:
 
-                await _messageBus.PublishMessage(orderPaymentRequestMessage, orderPaymentRequestMessageTopic, message.CorrelationId);
+            await messageBus.PublishMessage(orderPaymentRequestMessage, orderPaymentRequestMessageTopic, serviceBusConnectionString, args.Message.CorrelationId);
 
 
 5. Debug the app and perform the checkout process

@@ -31,8 +31,8 @@
 
 3. Debug the app and select a ticket
 4. Open Kibana and refresh the result
-5. Update the index pattern by refreshing the field list
-6. On GloboTicket.Services.EventCatalog project,
+
+5. On GloboTicket.Services.EventCatalog project,
    - Open EventRespository.cs file and add the following code inside GetEventById(Guid eventId) method:
 
             if (eventItem is null)
@@ -58,8 +58,8 @@
             using var scope = logger.BeginScope("Handling request for event {GloboTicketEventId}", eventId);
 
 
-7. Debug the app and select an event
-8. Select non‑existent event and it should return 404 error code
-9. Open Kibana and refresh the result
-10. Try to filter using field.GloboTicketEventId
+6. Debug the app and select an event
+7. Select non‑existent event and it should return 404 error code
+8. Open Kibana and refresh the result
+9. Try to filter using field.GloboTicketEventId
 

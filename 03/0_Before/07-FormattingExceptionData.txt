@@ -4,7 +4,7 @@
 1. On GloboTicket.Common project,
    - Open the csproj file and add the following package reference:
 
-            <PackageReference Include="Serilog.Exceptions" Version="5.6.0" />
+            <PackageReference Include="Serilog.Exceptions" Version="8.4.0" />
 
    - Open Logging.cs file and add the following code into loggerConfiguration settings:
 
@@ -15,10 +15,8 @@
      so it cannot access the database.
 
 3. Debug the app, open Kibana and refresh the result
-4. Refresh the index pattern
-5. Back to Kibana and refresh the result
-6. Verify that you can filter the log using exception structured data
-7. Before moving on, don't forget to fix the database connection string
+4. Verify that you can filter the log using exception structured data
+5. Before moving on, don't forget to fix the database connection string
 
 
 

@@ -18,5 +18,4 @@
 
 2. Debug the app then open Kibana and refresh the result
 3. Expand one of the latest log message and see if you get field.ApplicationName and field.EnvironmentName
-4. Update index pattern by opening the existing one and then refresh the field list
 
