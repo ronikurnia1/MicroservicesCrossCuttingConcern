@@ -3,49 +3,47 @@
 1. On GloboTicket.Common project,
    - Open csproj file and add the following NuGet package:
 
-            <PackageReference Include="Microsoft.Azure.ServiceBus" Version="4.1.4" />
+		<PackageReference Include="Azure.Messaging.ServiceBus" Version="7.13.1" />
 
 
 2. On GloboTicket.Shared project,
    - Add new class called AzureServiceBusHealthCheck and copy/paste 
      the following code:
 
-            using Microsoft.Azure.ServiceBus.Management;
-            using Microsoft.Extensions.Diagnostics.HealthChecks;
-            using System;
-            using System.Collections.Generic;
-            using System.Text;
-            using System.Threading;
-            using System.Threading.Tasks;
+    using Azure.Messaging.ServiceBus.Administration;
+    using Microsoft.Extensions.Diagnostics.HealthChecks;
+    using System;
+    using System.Threading;
+    using System.Threading.Tasks;
 
-            namespace GloboTicket.Shared
+    namespace GloboTicket.Shared
+    {
+        public class AzureServiceBusHealthCheck : IHealthCheck
+        {
+            private readonly string connectionString;
+            private readonly string topicName;
+
+            public AzureServiceBusHealthCheck(string connectionString, string topicName)
             {
-                public class AzureServiceBusHealthCheck : IHealthCheck
+                this.connectionString = connectionString;
+                this.topicName = topicName;
+            }
+
+            public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
+            {
+                try
                 {
-                    private readonly ManagementClient _managementClient;
-                    private readonly string _topicName;
-
-                    public AzureServiceBusHealthCheck(string connectionString, string topicName)
-                    {
-                        _managementClient = new ManagementClient(connectionString);
-                        _topicName = topicName;
-                    }
-
-                    public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
-                    {
-                        try
-                        {
-                            _ = await _managementClient.GetTopicRuntimeInfoAsync(_topicName, cancellationToken);
-
-                            return HealthCheckResult.Healthy();
-                        }
-                        catch (Exception e)
-                        {
-                            return new HealthCheckResult(context.Registration.FailureStatus, exception: e);
-                        }
-                    }
+                    var serviceBusAdministrationClient = new ServiceBusAdministrationClient(connectionString);
+                    _ = await serviceBusAdministrationClient.GetTopicRuntimePropertiesAsync(topicName, cancellationToken).ConfigureAwait(false);
+                    return HealthCheckResult.Healthy();
+                }
+                catch (Exception e)
+                {
+                    return new HealthCheckResult(context.Registration.FailureStatus, exception: e);
                 }
             }
+        }
+    }
 
 
    - Add new class called HealthCheckExtensions and copy/paste the following code:
@@ -54,7 +52,6 @@
             using Microsoft.Extensions.Diagnostics.HealthChecks;
             using System;
             using System.Collections.Generic;
-            using System.Text;
 
             namespace GloboTicket.Shared
             {

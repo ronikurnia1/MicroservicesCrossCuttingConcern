@@ -26,7 +26,7 @@
 
    - Open csproj file, and add the following NuGet package:
 
-            <PackageReference Include="AspNetCore.HealthChecks.Uris" Version="3.1.2" />
+		<PackageReference Include="AspNetCore.HealthChecks.Uris" Version="6.0.3" />
 
    - Open Startup.cs file, modify the following code:
             services.AddHealthChecks();
