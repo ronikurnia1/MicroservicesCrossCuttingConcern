@@ -8,7 +8,6 @@ namespace GloboTicket.Web
     {
         public static void Main(string[] args)
         {
-            Activity.DefaultIdFormat = ActivityIdFormat.W3C;
             CreateHostBuilder(args).Build().Run();
         }
 

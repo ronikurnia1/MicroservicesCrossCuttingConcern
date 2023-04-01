@@ -19,7 +19,8 @@
                            AutoRegisterTemplate = true,
                            AutoRegisterTemplateVersion = AutoRegisterTemplateVersion.ESv7,
                            IndexFormat = "globoticket-logs-{0:yyyy.MM.dd}",
-                           MinimumLogEventLevel = LogEventLevel.Debug
+                           MinimumLogEventLevel = LogEventLevel.Debug,
+                           ModifyConnectionSettings = c => c.BasicAuthentication("elastic", "changeme")
                        });
                }
 
@@ -30,4 +31,4 @@
             "ElasticUrl": "http://localhost:9200"
           },
 
-
+3. Debug the application, and open Kibana dashboard, you should see the logs in the index globoticket-logs*

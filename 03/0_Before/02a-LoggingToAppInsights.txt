@@ -29,3 +29,4 @@
      
      services.AddApplicationInsightsTelemetry();
 
+3. Debug the application, and check the Application Insights resource, you should see the logs from the application.

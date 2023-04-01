@@ -1,15 +1,16 @@
 
 
-1.  Make sure docker-compose for Elasticsearch and Kibana already up and running
+1.  Under folder Elasticsearch, run docker-compose for Elasticsearch and Kibana 
+    using the following command: docker-compose up -d    
 2.  Debug the app
 3.  Open Kibana using your browser and open the following url: http://localhost:5601
-4.  Click on "Explore on my own" link
-5.  Configure Index patterns by clicking on "Connect to your Elasticsearch index"
-6.  Click on "Create index pattern"
-7.  Type globoticket* on Index pattern name
-8.  Click on "Next step >" button
-9.  Select @timestamp for Time field and click on "Create index pattern" button
-10. Open humberger menu and select "Discover"
+4.  Login using the following credential: elastic/changeme
+5.  Click on "humberger menu" and select "Discover"
+6.  Click on blue combo box on the top left corner under "humberger menu" and select "Create a data view"
+7.  Type globoticket on Name
+8.  Type globoticket* on Index pattern
+9.  Select @timestamp for Timestamp field and click on "Save data view to Kibana" button
+10. Click on "humberger menu" and select "Discover"
 11. Explore the log 
 
 
